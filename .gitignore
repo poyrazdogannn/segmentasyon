@@ -1,0 +1,6 @@
+best_model.pth
+*.pth
+__pycache__/
+*.zip
+*.rar
+.env
