@@ -1,14 +1,13 @@
 Flask==3.0.3
 gunicorn==23.0.0
 
-# Render CPU destekli Torch
-torch==2.2.1
-torchvision==0.17.1
+torch==2.2.0
+torchvision==0.17.0
 timm==0.9.2
 segmentation-models-pytorch==0.3.3
 
 albumentations==1.4.7
-opencv-python-headless==4.8.1.78
+opencv-python-headless==4.8.0.74
 
 pydicom==2.4.3
 numpy==1.26.4
