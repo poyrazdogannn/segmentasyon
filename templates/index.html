@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>🪨 Böbrek Taşı Segmentasyonu – AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="bg-body">
+
+<div class="container py-5">
+    <!-- Başlık -->
+    <div class="text-center mb-4">
+        <h1 class="app-title mb-2">
+            🪨 Böbrek Taşı Segmentasyonu
+        </h1>
+        <p class="text-muted mb-1">
+            DICOM veya PNG/JPG yükleyerek <b>taş maskesini</b>, <b>mm cinsinden taş boyutlarını</b> ve
+            <b>çizimli overlay</b> görüntüleyebilirsiniz.
+        </p>
+        <p class="text-muted small">
+            Model eşiği (THR): <span class="badge bg-secondary">{{ thr }}</span>
+        </p>
+    </div>
+
+    <!-- Upload Kartı -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 upload-card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">📁 Görüntü Yükle</h5>
+                    <form action="/predict" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <input class="form-control" type="file" name="file"
+                                   accept=".dcm,.png,.jpg,.jpeg,.bmp,.tif,.tiff" required>
+                            <div class="form-text">
+                                DICOM için <code>PixelSpacing</code> otomatik okunur.
+                                Diğer formatlarda varsayılan: <b>0.5 × 0.5 mm</b>.
+                            </div>
+                        </div>
+                        <button class="btn btn-primary w-100" type="submit">
+                            🚀 Tahmin Al
+                        </button>
+                    </form>
+
+                    {% if error %}
+                    <div class="alert alert-danger mt-3 mb-0">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if overlay_image %}
+    <!-- Sonuç Alanı -->
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 result-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0">🖼 Segmentasyon Sonucu</h5>
+                        {% if filename %}
+                        <span class="badge bg-light text-dark border">
+                            {{ filename }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="result-image-wrapper">
+                        <img class="img-fluid rounded border"
+                             src="data:image/png;base64,{{ overlay_image }}"
+                             alt="Segmentasyon Sonucu">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">📏 Taş Ölçümleri</h5>
+                    <p class="text-muted small mb-3">
+                        Her satır, tespit edilen bir taş bileşenini temsil eder.
+                        <br>Alan: mm², Çevre: mm, Eş. Çap: mm.
+                    </p>
+
+                    {% if measurements and measurements|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Alan (mm²)</th>
+                                <th>Çevre (mm)</th>
+                                <th>Eş. Çap (mm)</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for m in measurements %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ "%.2f"|format(m.area_mm2) }}</td>
+                                <td>{{ "%.2f"|format(m.perim_mm) }}</td>
+                                <td>{{ "%.2f"|format(m.eq_d_mm) }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-secondary mb-0">
+                        Anlamlı büyüklükte bir taş bileşeni saptanmadı
+                        veya <code>mask</code> alanı çok küçük.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>
