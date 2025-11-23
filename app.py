@@ -1,4 +1,3 @@
-# app.py
 import base64
 import io
 import math
@@ -13,6 +12,7 @@ from pydicom.pixel_data_handlers.util import apply_voi_lut
 
 import torch
 import segmentation_models_pytorch as smp
+import requests  # 🔹 yeni
 
 # ==========================
 #  TEMEL AYARLAR
@@ -23,11 +23,34 @@ IMAGENET_STD  = (0.229, 0.224, 0.225)
 IMAGENET_MEAN_ARR = np.array(IMAGENET_MEAN, dtype=np.float32)
 IMAGENET_STD_ARR  = np.array(IMAGENET_STD , dtype=np.float32)
 
-THR = 0.5            # Sabit threshold, JSON yok
-AMP = True           # GPU varsa amp açık
+THR = 0.5            # Sabit threshold
+AMP = True           # GPU varsa amp kullanılabilir
+
 MODEL_PATH = "best_model.pth"
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1GUr88MQG-73fdniaVwfg9buCHnVBppIt"
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+# ==========================
+#  MODEL İNDİRME
+# ==========================
+def download_model_if_needed():
+    """best_model.pth yoksa Google Drive'dan indirir."""
+    if os.path.exists(MODEL_PATH):
+        print("[INFO] Model dosyası zaten mevcut.")
+        return
+    if not MODEL_URL:
+        raise RuntimeError("MODEL_URL boş! Model indirilemiyor.")
+    print(f"[INFO] Model indiriliyor: {MODEL_URL}")
+    r = requests.get(MODEL_URL, stream=True)
+    r.raise_for_status()
+    with open(MODEL_PATH, "wb") as f:
+        for chunk in r.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+    print("[INFO] Model indirildi.")
+
 
 # ==========================
 #  YARDIMCI FONKSİYONLAR
@@ -184,6 +207,7 @@ def run_inference_on_bytes(model, device, file_bytes: bytes, filename: str, thr:
         raise ValueError("Overlay encode edilemedi.")
     return buf, comps
 
+
 # ==========================
 #  MODEL YÜKLE
 # ==========================
@@ -209,9 +233,13 @@ def build_model(weights_path=MODEL_PATH):
 
 app = Flask(__name__)
 
+# Önce model yoksa indir, sonra yükle
+download_model_if_needed()
 model = build_model(MODEL_PATH)
+
 print("[INFO] Device:", DEVICE)
 print(f"[INFO] Kullanılan eşik (THR): {THR:.2f}")
+
 
 # ==========================
 #  ROUTES
@@ -280,5 +308,5 @@ def predict():
         )
 
 if __name__ == "__main__":
-    # Lokal deneme için:
     app.run(host="0.0.0.0", port=8000, debug=True)
+
