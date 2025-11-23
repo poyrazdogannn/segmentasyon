@@ -1,6 +1,23 @@
+# Model dosyaları
 best_model.pth
 *.pth
+
+# Python cache
 __pycache__/
-*.zip
-*.rar
+*.pyc
+*.pyo
+
+# Temp
+*.tmp
+*.log
+
+# Virtual env
+venv/
 .env
+
+# OS crap
+.DS_Store
+Thumbs.db
+
+# Uploaded files
+uploads/
